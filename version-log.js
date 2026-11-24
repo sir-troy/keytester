@@ -1,0 +1,18 @@
+/* Version log — newest first. Add a new block at the TOP when you release an update.
+   It shows up in the footer ("v1.0 · version log") of this tool. */
+window.USEFUL_VERSION_LOG = {
+  "app": "Keyboard & Mouse Tester",
+  "entries": [
+    {
+      "version": "1.0",
+      "date": "2026-11-23",
+      "notes": [
+        "Full-size keyboard map: press every key and watch it turn green",
+        "Rollover (ghosting) check and key chatter warnings",
+        "Mouse buttons, side buttons, scroll wheel and tilt",
+        "Double-click fault detection and polling rate estimate",
+        "Live event log; nothing you type is saved or sent"
+      ]
+    }
+  ]
+};

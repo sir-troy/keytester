@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keyboard &amp; Mouse Tester · test every key, click and scroll online</title>
+<meta name="description" content="Free online keyboard and mouse tester. Check every key, find ghosting and key chatter, test mouse buttons, scroll wheel, double-click faults and polling rate. Runs in your browser, no download.">
+<link rel="canonical" href="https://keytester.useful-indeed.com/">
+<meta property="og:title" content="Keyboard &amp; Mouse Tester · free online">
+<meta property="og:description" content="Test every key, mouse button and the scroll wheel. Spot ghosting, chatter and double-click faults. Free, no sign-up.">
+<meta property="og:url" content="https://keytester.useful-indeed.com/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0f1318">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="apple-touch-icon" href="logo.svg">
+<link rel="stylesheet" href="useful-indeed/footer.css">
+<script src="version-log.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: status bar on top, full keyboard, then mouse pad + mouse diagram + event log in a row. */
+:root {
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --ink: #18202b;
+  --muted: #5b6878;
+  --line: #d3dae3;
+  --key: #f8fafc;
+  --key-edge: #bcc6d2;
+  --accent: #e2780c;      /* pressed right now */
+  --accent-ink: #ffffff;
+  --ok: #148a68;          /* tested */
+  --ok-soft: #d7f1e8;
+  --warn: #c62f3c;        /* chatter */
+  --warn-soft: #fbe1e3;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1318; --surface: #171d24; --ink: #e5eaf0; --muted: #8d9aab; --line: #29323d;
+    --key: #222a34; --key-edge: #0a0d11; --accent: #ff9d2e; --accent-ink: #1a1206;
+    --ok: #3cc79b; --ok-soft: #173a30; --warn: #ff6b76; --warn-soft: #3d1c21;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1318; --surface: #171d24; --ink: #e5eaf0; --muted: #8d9aab; --line: #29323d;
+  --key: #222a34; --key-edge: #0a0d11; --accent: #ff9d2e; --accent-ink: #1a1206;
+  --ok: #3cc79b; --ok-soft: #173a30; --warn: #ff6b76; --warn-soft: #3d1c21;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding: 20px clamp(16px, 3vw, 32px) 32px;
+  -webkit-user-select: none; user-select: none;
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 18px; }
+
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; justify-content: space-between; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; font-weight: 600; }
+.status {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+}
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.status.on i { background: var(--ok); }
+.tiles { display: flex; flex-wrap: wrap; gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; min-width: 110px; }
+.tile b { display: block; font-family: var(--font-mono); font-size: 18px; font-variant-numeric: tabular-nums; }
+.tile span { font-size: 12px; color: var(--muted); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--key-edge); background: var(--key); }
+.legend .l-press::before { background: var(--accent); border-color: var(--accent); }
+.legend .l-ok::before { background: var(--ok-soft); border-color: var(--ok); }
+.legend .l-warn::before { background: var(--warn-soft); border-color: var(--warn); }
+
+button {
+  font: 600 13px var(--font-body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible, .pad:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Keyboard */
+.kb-scroll { overflow-x: auto; padding-bottom: 4px; }
+.kb { position: relative; width: calc(23 * var(--u)); height: calc(6.25 * var(--u)); --u: 48px; margin: 0 auto; }
+.key {
+  position: absolute;
+  left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u));
+  width: calc(var(--w) * var(--u) - 5px); height: calc(var(--h) * var(--u) - 5px);
+  background: var(--key); border: 1px solid var(--key-edge); border-bottom-width: 3px; border-radius: 6px;
+  font-family: var(--font-mono); font-size: calc(var(--u) * 0.24); line-height: 1.1; color: var(--ink);
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  transition: background .12s, border-color .12s, transform .05s;
+  white-space: pre;
+}
+.key small { font-size: 0.8em; color: var(--muted); }
+.key.ok { background: var(--ok-soft); border-color: var(--ok); }
+.key.warn { background: var(--warn-soft); border-color: var(--warn); }
+.key.down { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); transform: translateY(2px); border-bottom-width: 1px; transition: none; }
+.key.down small { color: inherit; }
+.extra { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--muted); align-items: center; }
+.chip { font-family: var(--font-mono); font-size: 12px; padding: 2px 8px; border-radius: 4px; background: var(--ok-soft); color: var(--ink); border: 1px solid var(--ok); }
+
+.keyinfo { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.kv { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-width: 0; }
+.kv span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.kv b { display: block; font-family: var(--font-mono); font-weight: 500; font-size: 15px; overflow-wrap: anywhere; }
+
+/* Bottom row */
+.row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 1050px) { .row { grid-template-columns: 1fr 1fr; } .row .log-panel { grid-column: 1 / -1; } }
+@media (max-width: 640px) { .row { grid-template-columns: 1fr; } }
+
+.pad {
+  position: relative; height: 300px; border-radius: 10px; border: 1px dashed var(--key-edge);
+  background: var(--bg); overflow: hidden; cursor: crosshair; touch-action: none;
+}
+.pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pad .hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); font-size: 14px; pointer-events: none; padding: 16px; }
+.pad .coords { position: absolute; left: 10px; bottom: 8px; font: 12px var(--font-mono); color: var(--muted); pointer-events: none; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+
+.mouse-wrap { display: grid; grid-template-columns: 140px 1fr; gap: 16px; align-items: center; }
+.mouse-wrap svg { width: 100%; height: auto; }
+svg .body { fill: var(--key); stroke: var(--key-edge); stroke-width: 3; }
+svg .btn { fill: var(--key); stroke: var(--key-edge); stroke-width: 2; transition: fill .12s; }
+svg .btn.ok { fill: var(--ok-soft); stroke: var(--ok); }
+svg .btn.warn { fill: var(--warn-soft); stroke: var(--warn); }
+svg .btn.down { fill: var(--accent); stroke: var(--accent); transition: none; }
+svg .arrow { fill: var(--muted); opacity: .35; transition: opacity .2s, fill .2s; }
+svg .arrow.flash { opacity: 1; fill: var(--accent); transition: none; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td { padding: 4px 0; border-bottom: 1px solid var(--line); }
+td:last-child { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+tr.warn td { color: var(--warn); font-weight: 600; }
+
+.log { list-style: none; margin: 0; padding: 0; font: 12px/1.6 var(--font-mono); height: 340px; overflow-y: auto; border-top: 1px solid var(--line); }
+.log li { display: flex; gap: 10px; border-bottom: 1px solid var(--line); padding: 2px 0; }
+.log time { color: var(--muted); flex: none; }
+.log .w { color: var(--warn); font-weight: 600; }
+.note { font-size: 12px; color: var(--muted); margin: 0; max-width: 65ch; }
+
+/* Guide (below the tester) */
+.guide { -webkit-user-select: text; user-select: text; display: grid; gap: 18px; margin-top: 8px; }
+.guide .panel { gap: 10px; }
+.guide h2.gt { font-size: 20px; text-transform: none; letter-spacing: -0.01em; color: var(--ink); }
+.guide h3 { font-size: 15px; margin: 6px 0 0; }
+.guide p, .guide li { color: var(--ink); opacity: .88; margin: 0; max-width: 78ch; }
+.guide ol, .guide ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.guide .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+.guide details { border-top: 1px solid var(--line); padding: 10px 0; }
+.guide summary { cursor: pointer; font-weight: 600; }
+.guide details p { margin-top: 6px; }
+.ui-foot { margin-top: 28px; }
+.brandline { font-size: 13px; color: var(--muted); margin: 2px 0 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4427223480429053"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <img src="logo.svg" alt="" width="40" height="40" style="border-radius:10px">
+      <div><h1>Keyboard &amp; Mouse Tester</h1><p class="brandline">Free · runs in your browser · nothing is recorded</p></div>
+      <span class="status" id="status"><i></i><span id="statusText">Click the page to start</span></span>
+    </div>
+    <div class="tiles">
+      <div class="tile"><b id="tTested">0 / 0</b><span>Keys tested</span></div>
+      <div class="tile"><b id="tHeld">0</b><span>Held now</span></div>
+      <div class="tile"><b id="tMax">0</b><span>Most held at once</span></div>
+      <div class="tile"><b id="tClicks">0</b><span>Mouse clicks</span></div>
+      <div class="tile"><b id="tWarn">0</b><span>Chatter warnings</span></div>
+    </div>
+  </header>
+
+  <section class="panel" aria-label="Keyboard">
+    <div class="panel-head">
+      <h2>Keyboard · press every key</h2>
+      <div class="legend"><span>Untested</span><span class="l-press">Pressed</span><span class="l-ok">Working</span><span class="l-warn">Possible chatter</span></div>
+      <button id="resetKb" type="button">Reset keyboard</button>
+    </div>
+    <div class="kb-scroll" id="kbScroll"><div class="kb" id="kb"></div></div>
+    <div class="extra" id="extra">Other keys detected: <em>none yet</em></div>
+    <div class="keyinfo">
+      <div class="kv"><span>key</span><b id="iKey">—</b></div>
+      <div class="kv"><span>code</span><b id="iCode">—</b></div>
+      <div class="kv"><span>keyCode</span><b id="iKeyCode">—</b></div>
+      <div class="kv"><span>Location</span><b id="iLoc">—</b></div>
+      <div class="kv"><span>Modifiers</span><b id="iMods">—</b></div>
+      <div class="kv"><span>Held keys</span><b id="iHeld">—</b></div>
+    </div>
+    <p class="note">For a rollover (ghosting) test, hold down as many keys as you can. Keys that never light up while others are held are being blocked by the keyboard. Some keys (Win, Fn, media keys, PrtSc on Windows) are handled by the system and may not reach the browser.</p>
+  </section>
+
+  <div class="row">
+    <section class="panel" aria-label="Mouse test area">
+      <div class="panel-head">
+        <h2>Mouse · test area</h2>
+        <button id="resetMouse" type="button">Reset mouse</button>
+      </div>
+      <div class="pad" id="pad" tabindex="0">
+        <canvas id="trail"></canvas>
+        <div class="hint" id="padHint">Click every button, scroll the wheel,<br>and move the mouse quickly in here.</div>
+        <div class="coords" id="coords">x — · y —</div>
+      </div>
+      <div class="stats">
+        <div class="kv"><span>Polling rate</span><b id="sHz">— Hz</b></div>
+        <div class="kv"><span>Peak rate</span><b id="sPeak">— Hz</b></div>
+        <div class="kv"><span>Double-clicks</span><b id="sDbl">0</b></div>
+        <div class="kv"><span>Last click gap</span><b id="sGap">—</b></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Mouse buttons">
+      <h2>Mouse buttons</h2>
+      <div class="mouse-wrap">
+        <svg viewBox="0 0 200 300" aria-hidden="true">
+          <path class="body" d="M100 10 C160 10 185 60 185 130 L185 205 C185 262 150 292 100 292 C50 292 15 262 15 205 L15 130 C15 60 40 10 100 10 Z"/>
+          <path class="btn" id="mb0" d="M96 14 C46 16 19 60 19 126 L96 126 Z"/>
+          <path class="btn" id="mb2" d="M104 14 C154 16 181 60 181 126 L104 126 Z"/>
+          <rect class="btn" id="mb1" x="88" y="38" width="24" height="56" rx="12"/>
+          <path class="arrow" id="wUp" d="M100 22 L108 32 L92 32 Z"/>
+          <path class="arrow" id="wDown" d="M100 110 L108 100 L92 100 Z"/>
+          <path class="arrow" id="wLeft" d="M70 66 L80 58 L80 74 Z"/>
+          <path class="arrow" id="wRight" d="M130 66 L120 58 L120 74 Z"/>
+          <rect class="btn" id="mb4" x="5" y="140" width="16" height="36" rx="6"/>
+          <rect class="btn" id="mb3" x="5" y="182" width="16" height="36" rx="6"/>
+        </svg>
+        <table>
+          <tbody>
+            <tr id="r0"><td>Left</td><td id="c0">0</td></tr>
+            <tr id="r1"><td>Middle (wheel)</td><td id="c1">0</td></tr>
+            <tr id="r2"><td>Right</td><td id="c2">0</td></tr>
+            <tr id="r3"><td>Back (side)</td><td id="c3">0</td></tr>
+            <tr id="r4"><td>Forward (side)</td><td id="c4">0</td></tr>
+            <tr><td>Scroll up</td><td id="cWu">0</td></tr>
+            <tr><td>Scroll down</td><td id="cWd">0</td></tr>
+            <tr><td>Tilt left / right</td><td id="cWh">0 / 0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">A button turns red when it registers two presses less than 60 ms apart. That usually means a worn switch that double-clicks by itself.</p>
+    </section>
+
+    <section class="panel log-panel" aria-label="Event log">
+      <div class="panel-head"><h2>Event log</h2><button id="clearLog" type="button">Clear</button></div>
+      <ul class="log" id="log"></ul>
+    </section>
+  </div>
+
+  <div class="guide">
+    <section class="panel">
+      <h2 class="gt">How to test your keyboard and mouse</h2>
+      <div class="cols">
+        <div>
+          <h3>Keyboard</h3>
+          <ol>
+            <li>Click anywhere on this page so it can hear your keyboard.</li>
+            <li>Press every key once. Working keys turn green; the counter at the top shows how many you have tested.</li>
+            <li>Keys that stay grey after pressing are not reaching the computer. Check the key, the cable or the keyboard's Fn lock.</li>
+            <li>For a rollover (ghosting) test, hold down several keys at once, for example the keys you use together in games. Watch "Most held at once".</li>
+          </ol>
+        </div>
+        <div>
+          <h3>Mouse</h3>
+          <ol>
+            <li>Move the pointer into the test area and click each button: left, right, middle (wheel) and the side buttons.</li>
+            <li>Scroll the wheel up and down, and tilt it left and right if your mouse can.</li>
+            <li>Move the mouse quickly in circles to see its polling rate.</li>
+            <li>Click normally for a while. If a button turns red, it pressed twice by itself within 60 ms, a sign of a worn switch.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 class="gt">What the results mean</h2>
+      <div class="cols">
+        <div><h3>Key chatter</h3><p>A key that registers again less than 40 ms after you let go is "chattering": one press types two letters. It is usually dust or a worn switch. Cleaning under the keycap often fixes it.</p></div>
+        <div><h3>Ghosting and rollover</h3><p>Some keyboards can only report a few keys at once. If a key never lights up while others are held, the keyboard is blocking it. Gaming keyboards with "N-key rollover" can report every key at the same time.</p></div>
+        <div><h3>Double-click fault</h3><p>When a mouse button reports two presses from one click, you get accidental double-clicks and dropped drags. The tester marks the button red when two presses arrive less than 60 ms apart.</p></div>
+        <div><h3>Polling rate</h3><p>How many times per second the mouse reports its position. Office mice are usually around 125 Hz; gaming mice 500 to 1000 Hz or more. Browsers can cap the number they show, so treat it as an estimate.</p></div>
+      </div>
+    </section>
+    <section class="panel">
+      <h2 class="gt">Frequently asked questions</h2>
+      <details><summary>Does this record what I type?</summary><p>No. Key presses are shown on this page only and are not saved or sent anywhere. Close or refresh the page and everything is gone.</p></details>
+      <details><summary>Why don't some keys light up?</summary><p>Keys like Windows, Fn, PrtSc and media keys are often handled by the operating system before the browser sees them, so they may not show here even when they work.</p></details>
+      <details><summary>Why can't I use shortcuts like Ctrl+F on this page?</summary><p>While you test, the page catches every key so shortcuts don't fire by accident. Click outside the browser window or switch tabs to use your shortcuts again.</p></details>
+      <details><summary>Can I test a laptop keyboard or touchpad?</summary><p>Yes. Laptop keyboards work the same way. A touchpad shows clicks, two-finger scrolling and movement in the mouse test area.</p></details>
+      <details><summary>Does it work on phones?</summary><p>It is made for computers with a keyboard and mouse. On a phone you can try the touch area, but the keyboard test needs a physical keyboard.</p></details>
+    </section>
+  </div>
+</div>
+
+<footer class="ui-foot">
+  <div class="ui-foot-in">
+    <a class="ui-foot-brand" href="https://useful-indeed.com" title="More small, free tools on useful-indeed"><img src="useful-indeed/logo.svg" alt="useful-indeed logo" width="22" height="22"><span>© <span data-ui-year>2026</span> <b>useful-indeed</b></span></a>
+    <nav class="ui-foot-nav" aria-label="Site"><a href="about.html">About</a><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="contact.html">Contact</a></nav>
+    <button type="button" class="ui-foot-ver" data-ui-ver>v1.0 · Version log</button>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- Keyboard layout (full-size ANSI, units of 1 key width) ----------
+  const L = [];
+  function row(y, x0, items) {
+    let x = x0;
+    for (const it of items) {
+      if (typeof it === 'number') { x += it; continue; }
+      const [code, label, w = 1, h = 1] = it;
+      L.push({ code, label, x, y, w, h });
+      x += w;
+    }
+  }
+  const F = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => ['F' + (a + i), 'F' + (a + i)]);
+  row(0, 0, [['Escape', 'Esc'], 1, ...F(1, 4), 0.5, ...F(5, 8), 0.5, ...F(9, 12)]);
+  const digits = [['Backquote', '~\n`'], ['Digit1', '!\n1'], ['Digit2', '@\n2'], ['Digit3', '#\n3'], ['Digit4', '$\n4'], ['Digit5', '%\n5'],
+    ['Digit6', '^\n6'], ['Digit7', '&\n7'], ['Digit8', '*\n8'], ['Digit9', '(\n9'], ['Digit0', ')\n0'], ['Minus', '_\n-'], ['Equal', '+\n=']];
+  row(1.25, 0, [...digits, ['Backspace', 'Backspace', 2]]);
+  const letters = (s) => s.split('').map(c => ['Key' + c, c]);
+  row(2.25, 0, [['Tab', 'Tab', 1.5], ...letters('QWERTYUIOP'), ['BracketLeft', '{\n['], ['BracketRight', '}\n]'], ['Backslash', '|\n\\', 1.5]]);
+  row(3.25, 0, [['CapsLock', 'Caps', 1.75], ...letters('ASDFGHJKL'), ['Semicolon', ':\n;'], ['Quote', '"\n\''], ['Enter', 'Enter', 2.25]]);
+  row(4.25, 0, [['ShiftLeft', 'Shift', 2.25], ...letters('ZXCVBNM'), ['Comma', '<\n,'], ['Period', '>\n.'], ['Slash', '?\n/'], ['ShiftRight', 'Shift', 2.75]]);
+  row(5.25, 0, [['ControlLeft', 'Ctrl', 1.25], ['MetaLeft', 'Win', 1.25], ['AltLeft', 'Alt', 1.25], ['Space', '', 6.25],
+    ['AltRight', 'Alt', 1.25], ['MetaRight', 'Win', 1.25], ['ContextMenu', 'Menu', 1.25], ['ControlRight', 'Ctrl', 1.25]]);
+  const nx = 15.5;
+  row(0, nx, [['PrintScreen', 'PrtSc'], ['ScrollLock', 'ScrLk'], ['Pause', 'Pause']]);
+  row(1.25, nx, [['Insert', 'Ins'], ['Home', 'Home'], ['PageUp', 'PgUp']]);
+  row(2.25, nx, [['Delete', 'Del'], ['End', 'End'], ['PageDown', 'PgDn']]);
+  row(4.25, nx + 1, [['ArrowUp', '↑']]);
+  row(5.25, nx, [['ArrowLeft', '←'], ['ArrowDown', '↓'], ['ArrowRight', '→']]);
+  const px = 19;
+  row(1.25, px, [['NumLock', 'Num'], ['NumpadDivide', '/'], ['NumpadMultiply', '*'], ['NumpadSubtract', '−']]);
+  row(2.25, px, [['Numpad7', '7'], ['Numpad8', '8'], ['Numpad9', '9'], ['NumpadAdd', '+', 1, 2]]);
+  row(3.25, px, [['Numpad4', '4'], ['Numpad5', '5'], ['Numpad6', '6']]);
+  row(4.25, px, [['Numpad1', '1'], ['Numpad2', '2'], ['Numpad3', '3'], ['NumpadEnter', 'Enter', 1, 2]]);
+  row(5.25, px, [['Numpad0', '0', 2], ['NumpadDecimal', '.']]);
+
+  const kb = $('kb');
+  const keyEls = {};
+  for (const k of L) {
+    const el = document.createElement('div');
+    el.className = 'key';
+    el.style.cssText = `--x:${k.x};--y:${k.y};--w:${k.w};--h:${k.h}`;
+    const parts = k.label.split('\n');
+    el.innerHTML = parts.length > 1 ? `<small>${esc(parts[0])}</small>${esc(parts[1])}` : esc(parts[0]);
+    kb.appendChild(el);
+    keyEls[k.code] = el;
+  }
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+  function sizeKb() {
+    const w = $('kbScroll').clientWidth;
+    const u = Math.max(30, Math.min(56, Math.floor(w / 23)));
+    kb.style.setProperty('--u', u + 'px');
+  }
+  window.addEventListener('resize', sizeKb); sizeKb();
+
+  // ---------- State ----------
+  const tested = new Set(), extra = new Set(), held = new Map(), lastUp = {};
+  let maxHeld = 0, warnings = 0, clicks = 0;
+  const TOTAL = L.length;
+
+  function updateTiles() {
+    $('tTested').textContent = `${[...tested].filter(c => keyEls[c]).length} / ${TOTAL}`;
+    $('tHeld').textContent = held.size;
+    $('tMax').textContent = maxHeld;
+    $('tClicks').textContent = clicks;
+    $('tWarn').textContent = warnings;
+    $('iHeld').textContent = held.size ? [...held.keys()].join(' ') : '—';
+  }
+
+  // ---------- Log ----------
+  const logEl = $('log'); const t0 = performance.now();
+  function log(msg, warn) {
+    const li = document.createElement('li');
+    const s = ((performance.now() - t0) / 1000).toFixed(2).padStart(7, ' ');
+    li.innerHTML = `<time>${s}s</time><span${warn ? ' class="w"' : ''}>${esc(msg)}</span>`;
+    logEl.prepend(li);
+    while (logEl.children.length > 80) logEl.lastChild.remove();
+  }
+  $('clearLog').addEventListener('click', () => { logEl.innerHTML = ''; });
+
+  // ---------- Focus status ----------
+  function focusStatus() {
+    const on = document.hasFocus();
+    $('status').classList.toggle('on', on);
+    $('statusText').textContent = on ? 'Listening for input' : 'Click the page to start';
+  }
+  window.addEventListener('focus', focusStatus);
+  window.addEventListener('blur', () => {
+    focusStatus();
+    for (const code of held.keys()) keyEls[code]?.classList.remove('down');
+    held.clear(); updateTiles();
+  });
+  setInterval(focusStatus, 1000); focusStatus();
+
+  // ---------- Keyboard events ----------
+  const LOC = ['Standard', 'Left', 'Right', 'Numpad'];
+  function showInfo(e) {
+    $('iKey').textContent = e.key === ' ' ? '(space)' : e.key;
+    $('iCode').textContent = e.code || '(none)';
+    $('iKeyCode').textContent = e.keyCode;
+    $('iLoc').textContent = LOC[e.location] ?? e.location;
+    const m = ['ctrlKey', 'shiftKey', 'altKey', 'metaKey'].filter(k => e[k]).map(k => k.replace('Key', ''));
+    $('iMods').textContent = m.length ? m.join(' + ') : 'none';
+  }
+  function markTested(code) {
+    if (!code) return;
+    tested.add(code);
+    const el = keyEls[code];
+    if (el) el.classList.add('ok');
+    else if (!extra.has(code)) {
+      extra.add(code);
+      const box = $('extra');
+      if (box.querySelector('em')) box.querySelector('em').remove();
+      const c = document.createElement('span'); c.className = 'chip'; c.textContent = code; box.appendChild(c);
+    }
+  }
+
+  const dialogOpen = () => !!document.querySelector('dialog[open]');
+  window.addEventListener('keydown', (e) => {
+    if (dialogOpen()) return;
+    e.preventDefault();
+    const code = e.code || e.key;
+    showInfo(e);
+    if (e.repeat) return;
+    const now = performance.now();
+    if (lastUp[code] && now - lastUp[code] < 40) {
+      warnings++; keyEls[code]?.classList.add('warn');
+      log(`${code} pressed again ${Math.round(now - lastUp[code])} ms after release (possible chatter)`, true);
+    } else {
+      log(`key down  ${code}  "${e.key}"`);
+    }
+    held.set(code, now);
+    maxHeld = Math.max(maxHeld, held.size);
+    keyEls[code]?.classList.add('down');
+    markTested(code);
+    updateTiles();
+  }, true);
+
+  window.addEventListener('keyup', (e) => {
+    if (dialogOpen()) return;
+    e.preventDefault();
+    const code = e.code || e.key;
+    if (!held.has(code)) { showInfo(e); markTested(code); log(`key up    ${code}  (no key down received)`); }
+    held.delete(code);
+    lastUp[code] = performance.now();
+    keyEls[code]?.classList.remove('down');
+    // Mac: releasing Meta swallows keyups of other keys, so clear them
+    if (code.startsWith('Meta')) { for (const c of held.keys()) keyEls[c]?.classList.remove('down'); held.clear(); }
+    updateTiles();
+  }, true);
+
+  $('resetKb').addEventListener('click', () => {
+    tested.clear(); extra.clear(); held.clear(); maxHeld = 0;
+    for (const el of Object.values(keyEls)) el.className = 'key';
+    $('extra').innerHTML = 'Other keys detected: <em>none yet</em>';
+    for (const id of ['iKey', 'iCode', 'iKeyCode', 'iLoc', 'iMods']) $(id).textContent = '—';
+    recountWarnings(); updateTiles(); log('Keyboard reset');
+  });
+
+  // ---------- Mouse ----------
+  const pad = $('pad'), canvas = $('trail'), ctx = canvas.getContext('2d');
+  const BTN = ['Left', 'Middle', 'Right', 'Back', 'Forward'];
+  const counts = [0, 0, 0, 0, 0], lastDown = [], btnWarn = [false, false, false, false, false];
+  let wheel = { up: 0, down: 0, left: 0, right: 0 }, dbl = 0, lastClickAt = 0;
+  let kbWarnCount = 0;
+
+  function recountWarnings() { warnings = document.querySelectorAll('.key.warn').length + btnWarn.filter(Boolean).length; }
+
+  function sizeCanvas() {
+    const r = pad.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+    canvas.width = r.width * d; canvas.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+  }
+  window.addEventListener('resize', sizeCanvas); sizeCanvas();
+
+  function setBtn(b, cls, on) { const el = $('mb' + b); if (el) el.classList.toggle(cls, on); }
+
+  pad.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen' && e.pointerType !== 'touch') return;
+    e.preventDefault(); pad.focus({ preventScroll: true });
+    const b = e.button; if (b < 0 || b > 4) { log(`button ${b} down`); return; }
+    const now = performance.now();
+    if (lastDown[b] && now - lastDown[b] < 60) {
+      btnWarn[b] = true; setBtn(b, 'warn', true); $('r' + b).classList.add('warn');
+      log(`${BTN[b]} button pressed twice in ${Math.round(now - lastDown[b])} ms (possible double-click fault)`, true);
+    } else log(`mouse down  ${BTN[b]}`);
+    $('sGap').textContent = lastDown[b] ? `${Math.round(now - lastDown[b])} ms` : '—';
+    lastDown[b] = now; counts[b]++; clicks++;
+    $('c' + b).textContent = counts[b];
+    setBtn(b, 'down', true); setBtn(b, 'ok', true);
+    $('padHint').style.display = 'none';
+    recountWarnings(); updateTiles();
+  });
+  window.addEventListener('pointerup', (e) => { if (e.button >= 0 && e.button <= 4) setBtn(e.button, 'down', false); });
+  // also catch extra buttons when pointer events coalesce chorded presses
+  pad.addEventListener('pointermove', (e) => {
+    for (let b = 0; b < 5; b++) {
+      const bit = [1, 4, 2, 8, 16][b];
+      const isDown = (e.buttons & bit) !== 0;
+      const el = $('mb' + b);
+      if (el.classList.contains('down') && !isDown) setBtn(b, 'down', false);
+    }
+  });
+  // Block browser back/forward and context menu so side/right buttons can be tested
+  window.addEventListener('mouseup', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); });
+  window.addEventListener('mousedown', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); });
+  window.addEventListener('auxclick', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); });
+  pad.addEventListener('contextmenu', (e) => e.preventDefault());
+  pad.addEventListener('dblclick', (e) => { dbl++; $('sDbl').textContent = dbl; log('double-click'); });
+
+  function flash(id) { const el = $(id); el.classList.add('flash'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('flash'), 140); }
+  pad.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    if (e.deltaY < 0) { wheel.up++; flash('wUp'); log(`scroll up  (deltaY ${e.deltaY.toFixed(1)})`); }
+    else if (e.deltaY > 0) { wheel.down++; flash('wDown'); log(`scroll down  (deltaY ${e.deltaY.toFixed(1)})`); }
+    if (e.deltaX < 0) { wheel.left++; flash('wLeft'); log('tilt left'); }
+    else if (e.deltaX > 0) { wheel.right++; flash('wRight'); log('tilt right'); }
+    $('cWu').textContent = wheel.up; $('cWd').textContent = wheel.down; $('cWh').textContent = `${wheel.left} / ${wheel.right}`;
+    $('padHint').style.display = 'none';
+  }, { passive: false });
+
+  // Movement trail + polling rate
+  let stamps = [], peak = 0, last = null, lastMove = 0;
+  pad.addEventListener('pointermove', (e) => {
+    const r = pad.getBoundingClientRect();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    const list = evs.length ? evs : [e];
+    const css = getComputedStyle(document.documentElement);
+    ctx.strokeStyle = css.getPropertyValue('--accent').trim(); ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.fillStyle = css.getPropertyValue('--ink').trim();
+    for (const ev of list) {
+      const x = ev.clientX - r.left, y = ev.clientY - r.top;
+      if (last && performance.now() - lastMove < 100) { ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(x, y); ctx.stroke(); }
+      ctx.fillRect(x - 1, y - 1, 2, 2);
+      last = { x, y }; stamps.push(ev.timeStamp || e.timeStamp);
+    }
+    lastMove = performance.now();
+    $('coords').textContent = `x ${Math.round(last.x)} · y ${Math.round(last.y)}`;
+  });
+  pad.addEventListener('pointerleave', () => { last = null; });
+
+  function fadeLoop() {
+    // fade the trail
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    ctx.globalAlpha = 0.06; ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.globalAlpha = 1;
+    requestAnimationFrame(fadeLoop);
+  }
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) requestAnimationFrame(fadeLoop);
+
+  setInterval(() => {
+    const now = performance.now();
+    stamps = stamps.filter(t => now - t < 500);
+    if (now - lastMove < 150 && stamps.length > 4) {
+      const hz = Math.round(stamps.length / 0.5);
+      peak = Math.max(peak, hz);
+      $('sHz').textContent = hz + ' Hz'; $('sPeak').textContent = peak + ' Hz';
+    }
+  }, 200);
+
+  $('resetMouse').addEventListener('click', () => {
+    counts.fill(0); btnWarn.fill(false); lastDown.length = 0; wheel = { up: 0, down: 0, left: 0, right: 0 }; dbl = 0; peak = 0; clicks = 0;
+    for (let b = 0; b < 5; b++) { $('c' + b).textContent = 0; $('mb' + b).setAttribute('class', 'btn'); $('r' + b).classList.remove('warn'); }
+    $('cWu').textContent = 0; $('cWd').textContent = 0; $('cWh').textContent = '0 / 0';
+    $('sDbl').textContent = 0; $('sHz').textContent = '— Hz'; $('sPeak').textContent = '— Hz'; $('sGap').textContent = '—';
+    ctx.clearRect(0, 0, canvas.width, canvas.height); $('padHint').style.display = '';
+    recountWarnings(); updateTiles(); log('Mouse reset');
+  });
+
+  updateTiles();
+  log('Ready. Click the page, then press keys and use the mouse.');
+})();
+</script>
+<script src="useful-indeed/badge.js" defer></script>
+</body>
+</html>

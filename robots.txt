@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://keytester.useful-indeed.com/sitemap.xml
